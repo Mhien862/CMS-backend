@@ -1,15 +1,21 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const app = express();
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import connectDB from './config/db.js'; 
+import router from './routers/userRoutes.js';
 
+dotenv.config();
+const app = express();
+const port = process.env.PORT || 5000;
+
+// Connect to the database
+connectDB();
+
+// Middleware
 app.use(cors());
 app.use(express.json());
+app.use("/", router);
 
-
-
-mongoose.connect('mongodb://localhost:27017/yourDB').then(() => console.log('Connected to MongoDB')).catch(err => console.log(err));
-
-
+// Start the server
 const PORT = 3000;
 app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));

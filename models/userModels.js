@@ -1,32 +1,70 @@
-import mongoose, { Schema } from "mongoose";
+import { pool } from "../config/db.js";
 
-const User = mongoose.model('User', new Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
+const User = {
+  // Tạo bảng users nếu chưa tồn tại
+  async createTable() {
+    const query = `
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role VARCHAR(50),
+        faculty VARCHAR(50),
+        agreement BOOLEAN DEFAULT false
+      )
+    `;
+    await pool.query(query);
   },
-  email: {
-    type: String,
-    required: true,
-    unique: true,
+
+  // Thêm user mới
+  async create(user) {
+    const { username, email, password, role, faculty, agreement } = user;
+    const query = `
+      INSERT INTO users (username, email, password, role, faculty, agreement)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+    const values = [username, email, password, role, faculty, agreement];
+    const result = await pool.query(query, values);
+    return result.rows[0];
   },
-  password: {
-    type: String,
-    required: true,
+
+  // Tìm user theo username
+  async findByUsername(username) {
+    const query = 'SELECT * FROM users WHERE username = $1';
+    const result = await pool.query(query, [username]);
+    return result.rows[0];
   },
-  role: {
-    type: String,
-    ref: "Role",
+
+  // Tìm user theo email
+  async findByEmail(email) {
+    const query = 'SELECT * FROM users WHERE email = $1';
+    const result = await pool.query(query, [email]);
+    return result.rows[0];
   },
-  faculty: {
-    type: String,
-    ref: "Faculty",
+
+  // Cập nhật thông tin user
+  async updateUser(id, updateData) {
+    const keys = Object.keys(updateData);
+    const values = Object.values(updateData);
+    const setString = keys.map((key, index) => `${key} = $${index + 1}`).join(', ');
+    const query = `
+      UPDATE users
+      SET ${setString}
+      WHERE id = $${keys.length + 1}
+      RETURNING *
+    `;
+    const result = await pool.query(query, [...values, id]);
+    return result.rows[0];
   },
-  agreement: {
-    type: Boolean,
-    default: false,
-  },
-}))
+
+  // Xóa user
+  async deleteUser(id) {
+    const query = 'DELETE FROM users WHERE id = $1 RETURNING *';
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+  }
+};
 
 export default User;

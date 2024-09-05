@@ -1,7 +1,6 @@
 import { pool } from "../config/db.js";
 
 const User = {
-  // Tạo bảng users nếu chưa tồn tại
   async createTable() {
     const query = `
       CREATE TABLE IF NOT EXISTS users (

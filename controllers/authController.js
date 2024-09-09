@@ -1,5 +1,7 @@
 import User from "../models/userModels.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken"; // Thêm import jwt
+
 export const login = async (req, res) => {
     const { email, password } = req.body;
     console.log(email, password);
@@ -16,53 +18,32 @@ export const login = async (req, res) => {
             message: "Password is incorrect",
         });
     }
+    
+    // Tạo token cho người dùng
+    const token = jwt.sign({ id: user.id, role: user.role }, 'secret_key'); // Thay 'secret_key' bằng khóa bí mật của bạn
     // Remove password from user object before sending
     const { password: _, ...userWithoutPassword } = user;
     return res.status(200).json({
         message: "Login successfully",
         data: userWithoutPassword,
+        token, // Trả về token
     });
 };
 
-export const register = (async (req, res) => {
-    
-    const { username, email, password, role, faculty, agreement } = req.body;
-    
-    // Validate input
-    if (!username || !email || !password) {
-        return res.status(400).json({ message: "Please provide all required fields" });
+export const register = async (req, res) => {
+    // Kiểm tra token
+    const token = req.headers.authorization?.split(" ")[1]; // Lấy token từ header
+    if (!token) {
+        return res.status(403).json({ message: "No token provided" });
     }
 
     try {
-        // Kiểm tra xem email đã tồn tại chưa
-        const existingUser = await User.findByEmail(email);
-        if (existingUser) {
-          return res.status(400).json({ message: "Email already in use" });
+        const decoded = jwt.verify(token, 'secret_key'); // Xác thực token
+        if (decoded.role !== 'admin') {
+            return res.status(403).json({ message: "Only administrators can use the registration function" }); // Chỉ cho phép admin
         }
-
-        const existingUserByUsername = await User.findOne({ username });
-        if (existingUserByUsername) {
-          return res.status(400).json({ message: "Username already in use" });
-        }
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new user
-    const newUser = await User.create({
-        username,
-        email,
-        password: hashedPassword, 
-        role: role || 'user',
-        faculty,
-        agreement
-    });
-
-    return res.status(201).json({
-        message: "User created successfully",
-        data: userWithoutPassword,
-      });
+    // ... existing code ...
     } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Error creating user" });
+        return res.status(401).json({ message: "Invalid token" });
     }
-});
+};

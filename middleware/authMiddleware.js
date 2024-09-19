@@ -17,7 +17,7 @@ const protect = async (req, res, next) => {
 
       // Lấy thông tin user từ id đã được decode, trừ password
       req.user = await User.findById(decoded.id).select('-password');
-
+      console.log(req.user)
       next();
     } catch (error) {
       console.error(error);
@@ -33,7 +33,7 @@ const protect = async (req, res, next) => {
 };
 
 const admin = (req, res, next) => {
-  if (req.user && req.user.role === 'admin') {
+  if (req.user && req.user.role === 'Admin') {
     next();
   } else {
     res.status(401);

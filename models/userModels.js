@@ -63,6 +63,12 @@ const User = {
     const query = 'DELETE FROM users WHERE id = $1 RETURNING *';
     const result = await pool.query(query, [id]);
     return result.rows[0];
+  },
+
+  async findAllUser() {
+    const query = 'SELECT * FROM users';
+    const result = await pool.query(query);
+    return result.rows;
   }
 };
 

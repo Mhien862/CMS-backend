@@ -31,19 +31,37 @@ export const login = async (req, res) => {
 };
 
 export const register = async (req, res) => {
-    // Kiểm tra token
-    const token = req.headers.authorization?.split(" ")[1]; // Lấy token từ header
+    const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
         return res.status(403).json({ message: "No token provided" });
     }
 
     try {
-        const decoded = jwt.verify(token, 'secret_key'); // Xác thực token
-        if (decoded.role !== 'admin') {
-            return res.status(403).json({ message: "Only administrators can use the registration function" }); // Chỉ cho phép admin
+        const decoded = jwt.verify(token, 'secret_key');
+        if (decoded.role !== 'Admin') {
+            return res.status(403).json({ message: "Only administrators can use the registration function" });
         }
-    // ... existing code ...
+        const { email, password, role, username, faculty } = req.body;
+        const existingUser = await User.findByEmail(email);
+        if (existingUser) {
+            return res.status(400).json({ message: "Email already exists" });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = await User.create({
+            email,
+            password: hashedPassword,
+            role,
+            username,
+            faculty
+        });
+        console.log('User created:', newUser);
+        const { password: _, ...userWithoutPassword } = newUser;
+        return res.status(201).json({
+            message: "User registered successfully",
+            user: userWithoutPassword
+        });
     } catch (error) {
-        return res.status(401).json({ message: "Invalid token" });
+        console.error('Registration error:', error);
+        return res.status(500).json({ message: "Error registering new user", error: error.message });
     }
 };

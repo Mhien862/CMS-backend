@@ -1,3 +1,8 @@
+/*
+1. Đổi tên file userModels.js thành user.model.js
+*/
+
+
 import { pool } from "../config/db.js";
 
 const User = {

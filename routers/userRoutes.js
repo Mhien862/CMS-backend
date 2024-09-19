@@ -4,7 +4,7 @@ import { Router } from 'express';
 import { admin } from '../middleware/authMiddleware.js';
 
 const router = Router();
-router.get('/:userId', getOne);
 router.get('/listUser', getListUser, admin);
+router.get('/:userId', getOne);
 export default router;
 

@@ -1,33 +1,51 @@
 import User from "../models/userModels.js";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken"; // Thêm import jwt
+import jwt from "jsonwebtoken";
 
 export const login = async (req, res) => {
-    const { email, password } = req.body;
-    console.log(email, password);
-    const user = await User.findByEmail(email);
-    console.log(user);
-    if (!user) {
-        return res.status(400).json({
-            message: "User not found",
+    try {
+        const { email, password } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                message: "Email and password are required",
+            });
+        }
+
+        const user = await User.findByEmail(email);
+        if (!user) {
+            return res.status(400).json({
+                message: "Invalid email or password",
+            });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(400).json({
+                message: "Invalid email or password",
+            });
+        }
+
+        const token = jwt.sign(
+            { id: user.id, role: user.role_id },
+            process.env.JWT_SECRET,
+            { expiresIn: '1h' }
+        );
+
+        const { password: _, ...userWithoutPassword } = user;
+
+        return res.status(200).json({
+            message: "Login successful",
+            user: userWithoutPassword,
+            token,
+        });
+    } catch (error) {
+        console.error('Login error:', error);
+        return res.status(500).json({
+            message: "An error occurred during login",
+            error: error.message
         });
     }
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-        return res.status(400).json({
-            message: "Password is incorrect",
-        });
-    }
-    
-    // Tạo token cho người dùng
-    const token = jwt.sign({ id: user.id, role: user.role }, 'secret_key'); // Thay 'secret_key' bằng khóa bí mật của bạn
-    // Remove password from user object before sending
-    const { password: _, ...userWithoutPassword } = user;
-    return res.status(200).json({
-        message: "Login successfully",
-        data: userWithoutPassword,
-        token, // Trả về token
-    });
 };
 
 export const register = async (req, res) => {
@@ -37,11 +55,11 @@ export const register = async (req, res) => {
     }
 
     try {
-        const decoded = jwt.verify(token, 'secret_key');
-        if (decoded.role !== 'Admin') {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Changed this line
+        if (decoded.role !== 1) { // Assuming 1 is the role_id for Admin
             return res.status(403).json({ message: "Only administrators can use the registration function" });
         }
-        const { email, password, role, username, faculty } = req.body;
+        const { email, password, role_id, username, faculty } = req.body;
         const existingUser = await User.findByEmail(email);
         if (existingUser) {
             return res.status(400).json({ message: "Email already exists" });
@@ -50,7 +68,7 @@ export const register = async (req, res) => {
         const newUser = await User.create({
             email,
             password: hashedPassword,
-            role,
+            role_id,
             username,
             faculty
         });

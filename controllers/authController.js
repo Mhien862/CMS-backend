@@ -55,25 +55,32 @@ export const register = async (req, res) => {
     }
 
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET); // Changed this line
-        if (decoded.role !== 1) { // Assuming 1 is the role_id for Admin
+        const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+        if (decoded.role !== 1) { 
             return res.status(403).json({ message: "Only administrators can use the registration function" });
         }
-        const { email, password, role_id, username, faculty } = req.body;
+        
+        const { email, password, role_id, username, faculty, faculty_id } = req.body;
+        const facultyId = faculty_id || faculty; 
+        
         const existingUser = await User.findByEmail(email);
         if (existingUser) {
             return res.status(400).json({ message: "Email already exists" });
         }
+        
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await User.create({
             email,
             password: hashedPassword,
             role_id,
             username,
-            faculty
+            faculty_id: facultyId,
+            is_active: true
         });
+        
         console.log('User created:', newUser);
         const { password: _, ...userWithoutPassword } = newUser;
+        
         return res.status(201).json({
             message: "User registered successfully",
             user: userWithoutPassword

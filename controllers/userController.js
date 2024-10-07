@@ -43,12 +43,30 @@ export const deleteUser = async (req, res) => {
 
 export const updateUser = async (req, res) => {
     const { userId } = req.params;
-    const { username, email, role } = req.body;
+    const { username, email, role_id, faculty_id, is_active } = req.body;
+
     try {
-        const query = 'UPDATE users SET username = $1, email = $2, role = $3 WHERE id = $4';
-        await pool.query(query, [username, email, role, userId]);
+        const query = `
+            UPDATE users 
+            SET username = $1, 
+                email = $2, 
+                role_id = $3, 
+                faculty_id = $4, 
+                is_active = $5
+            WHERE id = $6
+            RETURNING id, username, email, role_id, faculty_id, is_active`;
+
+        const result = await pool.query(query, [username, email, role_id, faculty_id || null, is_active, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
         return res.status(200).json({
             message: "Update user successfully",
+            user: result.rows[0]
         });
     } catch (error) {
         return res.status(500).json({
@@ -70,6 +88,22 @@ export const getRole = async (req, res) => {
     catch (error) {
         return res.status(500).json({
             message: "An error occurred while fetching roles",
+            error: error.message
+        });
+    }
+};
+
+export const getFaculty = async (req, res) => {
+    try {
+        const query = 'SELECT * FROM faculties';
+        const result = await pool.query(query)
+        return res.status(200).json({
+            message: "Get list faculty successfully",
+            data: result.rows
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "An error occurred while fetching faculties",
             error: error.message
         });
     }

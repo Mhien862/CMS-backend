@@ -1,4 +1,4 @@
-import {  getListUser, getInformationUser, getRole, deleteUser,updateUser } from '../controllers/userController.js';
+import {  getListUser, getInformationUser, getRole, deleteUser,updateUser,getFaculty } from '../controllers/userController.js';
 import { Router } from 'express';
 import { admin } from '../middleware/authMiddleware.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -80,6 +80,7 @@ router.get('/information/:userId', getInformationUser);
 // router.get('/:userId', getOne);
 
 router.get('/getRole',admin, getRole);
+router.get('/getFaculty',admin, getFaculty);
 router.delete('/deleteUser/:userId',admin, deleteUser);
 router.put('/updateUser/:userId',admin, updateUser);
 

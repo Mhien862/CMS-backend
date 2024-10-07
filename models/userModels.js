@@ -10,20 +10,20 @@ const User = {
         password VARCHAR(255) NOT NULL,
         role_id INTEGER REFERENCES roles(id),
         faculty_id INTEGER REFERENCES faculties(id),
-        agreement BOOLEAN DEFAULT false
+        is_active BOOLEAN DEFAULT true
       )
     `;
     await pool.query(query);
   },
 
   async create(user) {
-    const { username, email, password, role_id, faculty_id, agreement } = user;
+    const { username, email, password, role_id, faculty_id, is_active } = user;
     const query = `
-      INSERT INTO users (username, email, password, role_id, faculty_id, agreement)
+      INSERT INTO users (username, email, password, role_id, faculty_id, is_active)
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
-    const values = [username, email, password, role_id, faculty_id, agreement];
+    const values = [username, email, password, role_id, faculty_id, is_active];
     const result = await pool.query(query, values);
     return result.rows[0];
   },
@@ -69,6 +69,34 @@ const User = {
       WHERE u.id = $1
     `;
     const result = await pool.query(query, [id]);
+    return result.rows[0];
+  },
+
+  async activateUser(id) {
+    const query = `
+      UPDATE users
+      SET is_active = true
+      WHERE id = $1
+      RETURNING *
+    `;
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+  },
+
+  async deactivateUser(id) {
+    const query = `
+      UPDATE users
+      SET is_active = false
+      WHERE id = $1
+      RETURNING *
+    `;
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+  },
+
+  async findActiveUserByEmail(email) {
+    const query = 'SELECT * FROM users WHERE email = $1 AND is_active = true';
+    const result = await pool.query(query, [email]);
     return result.rows[0];
   }
 };

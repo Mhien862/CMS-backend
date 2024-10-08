@@ -10,8 +10,8 @@ export const getOne = async (req, res) => {
 
 export const getListUser = async (req, res) => {
     try {
-        const query = 'SELECT * FROM users';
-        const result = await pool.query(query)
+        const query = 'SELECT * FROM users ORDER BY id ASC'; 
+        const result = await pool.query(query);
         return res.status(200).json({
             message: "Get list user successfully",
             data: result.rows
@@ -23,6 +23,7 @@ export const getListUser = async (req, res) => {
         });
     }
 };
+
 
 
 export const deleteUser = async (req, res) => {
@@ -124,5 +125,55 @@ export const getInformationUser = async (req, res) => {
             error: error.message
         });
     }
+};
+
+export const updateUserStatus = async (req, res) => {
+    const { userId } = req.params;
+    const { is_active } = req.body;
+
+    try {
+        const query = `
+            UPDATE users 
+            SET is_active = $1
+            WHERE id = $2
+            RETURNING id, username, email, role_id, faculty_id, is_active`;
+
+        const result = await pool.query(query, [is_active, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            message: "User status updated successfully",
+            user: result.rows[0]
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "An error occurred while updating user status",
+            error: error.message
+        });
+    }
+};
+
+export const listTeacher = async (req, res) => {
+    try {
+        const query = 'SELECT * FROM users WHERE role_id = 2';
+        const result = await pool.query(query);
+        return res.status(200).json({
+            message: "Get list teacher successfully",
+            data: result.rows
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "An error occurred while fetching teachers",
+            error: error.message
+        });
+    }
 }
+
+
+
 

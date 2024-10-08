@@ -19,6 +19,13 @@ export const login = async (req, res) => {
             });
         }
 
+        // Kiểm tra is_active
+        if (!user.is_active) {
+            return res.status(403).json({
+                message: "Your account is inactive. Please contact an administrator.",
+            });
+        }
+
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({

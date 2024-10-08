@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createClass, getAvailableTeachers, getAllClasses, updateClass, deleteClass, getClassById } from '../controllers/ClassController.js';
+import { createClass, getAvailableTeachers, getAllClasses, updateClass, deleteClass, getClassById } from '../controllers/classController.js';
 import { admin, protect } from '../middleware/authMiddleware.js';
 
 const router = Router();

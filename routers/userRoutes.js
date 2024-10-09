@@ -1,4 +1,4 @@
-import {  getListUser, getInformationUser, getRole, deleteUser,updateUser,getFaculty, updateUserStatus, listTeacher } from '../controllers/userController.js';
+import {  getListUser, getInformationUser, getRole, deleteUser,updateUser,getFaculty, updateUserStatus, listTeacher, getMe } from '../controllers/userController.js';
 import { Router } from 'express';
 import { admin } from '../middleware/authMiddleware.js';
 import { protect } from '../middleware/authMiddleware.js';
@@ -86,6 +86,7 @@ router.delete('/deleteUser/:userId',admin, deleteUser);
 router.put('/updateUser/:userId',admin, updateUser);
 router.put('/:userId/status',admin, updateUserStatus);
 router.get('/listTeacher',admin, listTeacher);
+router.get('/me', getMe);
 
 export default router;
 

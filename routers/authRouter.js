@@ -67,6 +67,7 @@ router.post('/login', login, protect);
  */
 router.post('/register', register, protect, admin, adminRegister);
 
+
 export default router;
 
 /**

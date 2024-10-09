@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import jwt from "jsonwebtoken";
 
 export const getOne = async (req, res) => {
     const { userId } = req.params;
@@ -173,6 +174,61 @@ export const listTeacher = async (req, res) => {
         });
     }
 }
+
+
+
+export const getMe = async (req, res) => {
+    try {
+        
+        const token = req.headers.authorization?.split(" ")[1];
+        if (!token) {
+            return res.status(401).json({ message: "No token provided" });
+        }
+
+       
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        
+        const query = `
+            SELECT u.id, u.username, u.email, u.role_id, u.faculty_id, u.is_active,
+                   r.name AS role_name, f.name AS faculty_name
+            FROM users u
+            LEFT JOIN roles r ON u.role_id = r.id
+            LEFT JOIN faculties f ON u.faculty_id = f.id
+            WHERE u.id = $1
+        `;
+
+        const result = await pool.query(query, [decoded.id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        const user = result.rows[0];
+
+        
+        if (!user.is_active) {
+            return res.status(403).json({
+                message: "Your account is inactive. Please contact an administrator.",
+            });
+        }
+
+        // Return user information
+        return res.status(200).json({
+            message: "User information retrieved successfully",
+            user: user
+        });
+    } catch (error) {
+        console.error('Get user info error:', error);
+        if (error.name === 'JsonWebTokenError') {
+            return res.status(401).json({ message: "Invalid token" });
+        }
+        return res.status(500).json({
+            message: "An error occurred while retrieving user information",
+            error: error.message
+        });
+    }
+};
 
 
 

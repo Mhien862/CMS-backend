@@ -178,3 +178,25 @@ export const initializeClassesTable = async (req, res) => {
         });
     }
 };
+
+export const getClassesByTeacherId = async (req, res) => {
+    const { teacherId } = req.params;
+    try {
+        const query = `
+            SELECT c.*, f.name AS faculty_name
+            FROM classes c
+            LEFT JOIN faculties f ON c.faculty_id = f.id
+            WHERE c.teacher_id = $1
+        `;
+        const result = await pool.query(query, [teacherId]);
+        return res.status(200).json({
+            message: "Teacher's classes retrieved successfully",
+            data: result.rows
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "An error occurred while fetching teacher's classes",
+            error: error.message
+        });
+    }
+};

@@ -19,7 +19,6 @@ export const login = async (req, res) => {
             });
         }
 
-        // Kiểm tra is_active
         if (!user.is_active) {
             return res.status(403).json({
                 message: "Your account is inactive. Please contact an administrator.",
@@ -97,3 +96,4 @@ export const register = async (req, res) => {
         return res.status(500).json({ message: "Error registering new user", error: error.message });
     }
 };
+

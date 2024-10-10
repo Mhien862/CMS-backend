@@ -4,13 +4,13 @@ import { pool } from '../config/db.js';
 export const createClass = async (req, res) => {
     const { name, faculty_id, teacher_id, password } = req.body;
     try {
-        const hashedPassword = await bcrypt.hash(password, 10);
+        
         const query = `
             INSERT INTO classes (name, faculty_id, teacher_id, password)
             VALUES ($1, $2, $3, $4)
             RETURNING *
         `;
-        const values = [name, faculty_id, teacher_id, hashedPassword];
+        const values = [name, faculty_id, teacher_id, password];
         const result = await pool.query(query, values);
         return res.status(201).json({
             message: "Class created successfully",

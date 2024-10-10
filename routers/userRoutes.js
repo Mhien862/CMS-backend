@@ -6,6 +6,7 @@ import { set } from 'mongoose';
 
 
 
+
 const router = Router();
 
 /**
@@ -87,6 +88,7 @@ router.put('/updateUser/:userId',admin, updateUser);
 router.put('/:userId/status',admin, updateUserStatus);
 router.get('/listTeacher',admin, listTeacher);
 router.get('/me', getMe);
+ 
 
 export default router;
 

@@ -249,7 +249,7 @@ export const teacherCheckClass = async (req, res) => {
 
 
 export const createFolder = async (req, res) => {
-  console.log('CreateFolder controller started');
+  
   const { classId } = req.params;
   const { name } = req.body;
   const userId = req.user.id;
@@ -283,10 +283,6 @@ export const getFoldersByClassId = async (req, res) => {
     console.log(`User info - userId: ${userId}, role_id: ${role_id}`);
 
     try {
-        // Kiểm tra quyền giáo viên
-        
-
-        // Kiểm tra xem giáo viên có phụ trách lớp học này không
         const checkTeacherQuery = "SELECT * FROM classes WHERE id = $1 AND teacher_id = $2";
         const teacherResult = await pool.query(checkTeacherQuery, [classId, userId]);
         console.log(`Teacher check result: ${JSON.stringify(teacherResult.rows)}`);
@@ -296,11 +292,10 @@ export const getFoldersByClassId = async (req, res) => {
             return res.status(403).json({ message: "You are not authorized to view folders in this class" });
         }
 
-        // Sử dụng model Folder để lấy danh sách folder
+   
         const folders = await Folder.findByClassId(classId);
         console.log(`Found ${folders.length} folders for class ${classId}`);
 
-        // Trả về kết quả
         res.status(200).json({
             message: "Folders retrieved successfully",
             folders: folders
@@ -309,5 +304,102 @@ export const getFoldersByClassId = async (req, res) => {
     } catch (error) {
         console.error("Error fetching folders:", error);
         res.status(500).json({ message: "An error occurred while fetching the folders", error: error.message });
+    }
+};
+
+
+export const getClassesByFaculty = async (req, res) => {
+    const { facultyId } = req.params;
+    try {
+        const query = `
+            SELECT c.*, f.name AS faculty_name, u.username AS teacher_name
+            FROM classes c
+            LEFT JOIN faculties f ON c.faculty_id = f.id
+            LEFT JOIN users u ON c.teacher_id = u.id
+            WHERE c.faculty_id = $1
+        `;
+        const result = await pool.query(query, [facultyId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "No classes found for this faculty"
+            });
+        }
+
+        return res.status(200).json({
+            message: "Classes retrieved successfully",
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error in getClassesByFaculty:', error);
+        return res.status(500).json({
+            message: "An error occurred while fetching classes",
+            error: error.message
+        });
+    }
+};
+
+
+export const joinClass = async (req, res) => {
+    const { classId } = req.params;
+    const { password } = req.body;
+    const studentId = req.user.id; 
+
+    try {
+    
+        const classQuery = 'SELECT * FROM classes WHERE id = $1';
+        const classResult = await pool.query(classQuery, [classId]);
+
+        if (classResult.rows.length === 0) {
+            return res.status(404).json({ message: "Class not found" });
+        }
+
+        const classData = classResult.rows[0];
+
+        
+        if (password !== classData.password) {
+            return res.status(401).json({ message: "Incorrect password" });
+        }
+
+        const joinQuery = 'INSERT INTO student_classes (student_id, class_id) VALUES ($1, $2) ON CONFLICT DO NOTHING';
+        await pool.query(joinQuery, [studentId, classId]);
+
+        return res.status(200).json({ message: "Successfully joined the class" });
+    } catch (error) {
+        console.error('Error in joinClass:', error);
+        return res.status(500).json({
+            message: "An error occurred while joining the class",
+            error: error.message
+        });
+    }
+};
+
+
+export const getFoldersForStudent = async (req, res) => {
+    const { classId } = req.params;
+    const studentId = req.user.id; 
+
+    try {
+        // First, check if the student is in the class
+        const checkStudentQuery = 'SELECT * FROM student_classes WHERE student_id = $1 AND class_id = $2';
+        const studentResult = await pool.query(checkStudentQuery, [studentId, classId]);
+
+        if (studentResult.rows.length === 0) {
+            return res.status(403).json({ message: "You are not enrolled in this class" });
+        }
+
+        // If student is enrolled, get the folders
+        const foldersQuery = 'SELECT * FROM folders WHERE class_id = $1';
+        const foldersResult = await pool.query(foldersQuery, [classId]);
+
+        return res.status(200).json({
+            message: "Folders retrieved successfully",
+            folders: foldersResult.rows
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "An error occurred while fetching folders",
+            error: error.message
+        });
     }
 };

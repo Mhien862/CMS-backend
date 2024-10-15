@@ -9,11 +9,19 @@ import {
   getClassesByTeacherId, 
   teacherCheckClass,
   createFolder,
-  getFoldersByClassId
+  getFoldersByClassId,
+  getClassesByFaculty,
+  joinClass,
+  getFoldersForStudent
 } from '../controllers/classController.js';
-import { admin, protect, teacher } from '../middleware/authMiddleware.js';
+import { submitAssignment,getAssignmentsByFolder, updateAssignment,deleteAssignment, getSubmittedAssignments, gradeAssignment } from '../controllers/assigmentController.js';
+import { admin, protect, teacher,student } from '../middleware/authMiddleware.js';
+import { upload } from '../middleware/uploadMiddleware.js';
+
+
 
 const router = Router();
+
 
 // Existing routes
 router.post('/create', admin, createClass);
@@ -101,6 +109,27 @@ router.post('/:classId/createFolder', teacher, createFolder);
  *         description: Class not found
  */
 router.get('/:classId/folders', teacher, getFoldersByClassId);
+router.post('/:classId/folders/:folderId/assignments',
+  student,
+  upload.single('file'),
+  submitAssignment
+);
+
+// Get all assignments in a folder
+router.get('/:classId/folders/:folderId/assignments', teacher, getAssignmentsByFolder);
+router.put('/:classId/assignments/:assignmentId/grade', teacher, gradeAssignment);
+
+// Update an existing assignment
+router.put('/:classId/folders/:folderId/assignments/:assignmentId', student, upload.single('file'), updateAssignment);
+router.get('/:classId/assignments', student, getSubmittedAssignments);
+// Delete an assignment
+router.delete('/:classId/folders/:folderId/assignments/:assignmentId', student, deleteAssignment);
+router.get('/faculty/:facultyId/classes', student, getClassesByFaculty);
+router.post('/:classId/join', student, joinClass);
+router.get('/:classId/FolderStudent', student, getFoldersForStudent);
+
+
+
 
 export default router;
 

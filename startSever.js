@@ -11,6 +11,9 @@ import swaggerSpecs from './swagger.js';
 import userRoutes from './routers/userRoutes.js';
 import Class from './models/classModels.js';
 import Folder from './models/folderModels.js';
+import Assignment from './models/assignmentModel.js';
+import StudentClasses from './models/studentClassesModel.js';
+
 
 dotenv.config();
 const app = express();
@@ -39,6 +42,11 @@ const startServer = async () => {
       console.log('Classes table checked/created');
       await Folder.createTable();
       console.log('Folders table checked/created');
+      await Assignment.createTable();
+      console.log('Assignments table checked/created');
+      await StudentClasses.createTable();
+      console.log('StudentClasses table checked/created');
+
     } catch (tableError) {
       console.error('Error creating tables:', tableError.message);
       console.error('Table creation error stack:', tableError.stack);

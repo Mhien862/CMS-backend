@@ -1,5 +1,6 @@
 import { pool } from "../config/db.js";
 import jwt from "jsonwebtoken";
+import bcrypt from "bcrypt";
 
 export const getOne = async (req, res) => {
     const { userId } = req.params;
@@ -225,6 +226,41 @@ export const getMe = async (req, res) => {
         }
         return res.status(500).json({
             message: "An error occurred while retrieving user information",
+            error: error.message
+        });
+    }
+};
+
+export const updatePassword = async (req, res) => {
+    const { userId } = req.params;
+    const { newPassword } = req.body;
+
+    try {
+    
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
+
+        const query = `
+            UPDATE users 
+            SET password = $1
+            WHERE id = $2
+            RETURNING id`;
+
+        const result = await pool.query(query, [hashedPassword, userId]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            message: "Password updated successfully",
+        });
+    } catch (error) {
+        console.error('Update password error:', error);
+        return res.status(500).json({
+            message: "An error occurred while updating password",
             error: error.message
         });
     }

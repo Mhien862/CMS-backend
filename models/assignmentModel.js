@@ -12,7 +12,8 @@ const Assignment = {
       folder_id INTEGER REFERENCES folders(id),
       student_id INTEGER REFERENCES users(id),
       submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      grade NUMERIC(5,2)
+      grade NUMERIC(5,2),
+      comment TEXT
     )
   `;
   await pool.query(query);
@@ -90,6 +91,12 @@ const Assignment = {
   async updateGrade(id, grade) {
     const query = 'UPDATE assignments SET grade = $1 WHERE id = $2 RETURNING *';
     const result = await pool.query(query, [grade, id]);
+    return result.rows[0];
+  },
+
+  async updateGradeAndComment(id, grade, comment) {
+    const query = 'UPDATE assignments SET grade = $1, comment = $2 WHERE id = $3 RETURNING *';
+    const result = await pool.query(query, [grade, comment, id]);
     return result.rows[0];
   },
 

@@ -58,7 +58,6 @@ export const updateAssignment = async (req, res) => {
     }
 
     if (req.file) {
-      // Delete old file from Cloudinary if exists
       if (assignment.file_url) {
         const publicId = assignment.file_url.split('/').pop().split('.')[0];
         await cloudinary.uploader.destroy(publicId);
@@ -160,7 +159,7 @@ export const getAssignmentsByFolder = async (req, res) => {
 
 export const gradeAssignment = async (req, res) => {
   const { assignmentId } = req.params;
-  const { grade } = req.body;
+  const { grade, comment } = req.body; 
   const teacherId = req.user.id;
 
   try {
@@ -179,7 +178,7 @@ export const gradeAssignment = async (req, res) => {
       return res.status(403).json({ message: "You are not authorized to grade this assignment" });
     }
 
-    const updatedAssignment = await Assignment.updateGrade(assignmentId, grade);
+    const updatedAssignment = await Assignment.updateGradeAndComment(assignmentId, grade, comment);
     
     res.status(200).json({
       message: "Assignment graded successfully",

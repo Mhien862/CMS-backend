@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { pool } from '../config/db.js';
 import Class from '../models/classModels.js';
 import Folder from '../models/folderModels.js';
+import StudentClasses from '../models/studentClassesModel.js';
 
 export const createClass = async (req, res) => {
     const { name, faculty_id, teacher_id, password } = req.body;
@@ -346,7 +347,22 @@ export const joinClass = async (req, res) => {
     const studentId = req.user.id; 
 
     try {
-    
+        // Check if student is already in class with correct password
+        const existingEnrollment = await StudentClasses.findByStudentAndClass(studentId, classId);
+        
+        if (existingEnrollment) {
+            const classQuery = 'SELECT password FROM classes WHERE id = $1';
+            const classResult = await pool.query(classQuery, [classId]);
+            
+            if (classResult.rows[0].password === existingEnrollment.class_password) {
+                return res.status(200).json({ 
+                    message: "Already joined the class",
+                    alreadyJoined: true 
+                });
+            }
+        }
+
+        // If not already joined or password changed, verify the new password
         const classQuery = 'SELECT * FROM classes WHERE id = $1';
         const classResult = await pool.query(classQuery, [classId]);
 
@@ -355,16 +371,24 @@ export const joinClass = async (req, res) => {
         }
 
         const classData = classResult.rows[0];
-
-        
         if (password !== classData.password) {
-            return res.status(401).json({ message: "Incorrect password" });
+            return res.status(402).json({ message: "Incorrect password" });
         }
 
-        const joinQuery = 'INSERT INTO student_classes (student_id, class_id) VALUES ($1, $2) ON CONFLICT DO NOTHING';
-        await pool.query(joinQuery, [studentId, classId]);
+        // Insert or update student enrollment with new password
+        const joinQuery = `
+            INSERT INTO student_classes (student_id, class_id, class_password)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (student_id, class_id) 
+            DO UPDATE SET class_password = EXCLUDED.class_password
+            RETURNING *
+        `;
+        await pool.query(joinQuery, [studentId, classId, password]);
 
-        return res.status(200).json({ message: "Successfully joined the class" });
+        return res.status(200).json({ 
+            message: "Successfully joined the class",
+            alreadyJoined: false
+        });
     } catch (error) {
         console.error('Error in joinClass:', error);
         return res.status(500).json({
@@ -373,6 +397,32 @@ export const joinClass = async (req, res) => {
         });
     }
 };
+
+
+export const checkEnrollmentStatus = async (req, res) => {
+    const { classId } = req.params;
+    const studentId = req.user.id;
+  
+    try {
+      const enrollment = await StudentClasses.findByStudentAndClass(studentId, classId);
+      
+      if (enrollment) {
+        return res.status(200).json({
+          isEnrolled: true,
+          enrollmentDetails: enrollment
+        });
+      }
+  
+      return res.status(200).json({
+        isEnrolled: false
+      });
+    } catch (error) {
+      return res.status(500).json({
+        message: "Error checking enrollment status",
+        error: error.message
+      });
+    }
+  };
 
 
 export const getFoldersForStudent = async (req, res) => {

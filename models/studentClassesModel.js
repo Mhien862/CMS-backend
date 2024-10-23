@@ -7,6 +7,7 @@ const StudentClasses = {
         id SERIAL PRIMARY KEY,
         student_id INTEGER NOT NULL,
         class_id INTEGER NOT NULL,
+        class_password VARCHAR(255),
         joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (student_id) REFERENCES users(id),
         FOREIGN KEY (class_id) REFERENCES classes(id),
@@ -16,13 +17,13 @@ const StudentClasses = {
     await pool.query(query);
   },
 
-  async create(studentId, classId) {
+  async create(studentId, classId, classPassword) {
     const query = `
-      INSERT INTO student_classes (student_id, class_id)
-      VALUES ($1, $2)
+      INSERT INTO student_classes (student_id, class_id, class_password)
+      VALUES ($1, $2, $3)
       RETURNING *
     `;
-    const values = [studentId, classId];
+    const values = [studentId, classId, classPassword];
     const result = await pool.query(query, values);
     return result.rows[0];
   },
@@ -53,7 +54,8 @@ const StudentClasses = {
 
   async getStudentClassesWithDetails(studentId) {
     const query = `
-      SELECT sc.*, c.name AS class_name, u.username AS teacher_name
+      SELECT sc.*, c.name AS class_name, u.username AS teacher_name, 
+             c.password AS class_password
       FROM student_classes sc
       JOIN classes c ON sc.class_id = c.id
       JOIN users u ON c.teacher_id = u.id
@@ -75,7 +77,16 @@ const StudentClasses = {
   },
 
   async isStudentInClass(studentId, classId) {
-    const query = 'SELECT EXISTS(SELECT 1 FROM student_classes WHERE student_id = $1 AND class_id = $2)';
+    const query = `
+      SELECT EXISTS(
+        SELECT 1 
+        FROM student_classes sc
+        JOIN classes c ON sc.class_id = c.id
+        WHERE sc.student_id = $1 
+        AND sc.class_id = $2 
+        AND sc.class_password = c.password
+      )
+    `;
     const result = await pool.query(query, [studentId, classId]);
     return result.rows[0].exists;
   }

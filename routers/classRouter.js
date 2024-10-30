@@ -13,7 +13,8 @@ import {
   getClassesByFaculty,
   joinClass,
   getFoldersForStudent,
-  checkEnrollmentStatus
+  checkEnrollmentStatus,
+  getStudentsInClass
 } from '../controllers/classController.js';
 import { submitAssignment,getAssignmentsByFolder, updateAssignment,deleteAssignment, getSubmittedAssignments, gradeAssignment } from '../controllers/assigmentController.js';
 import { admin, protect, teacher,student } from '../middleware/authMiddleware.js';
@@ -122,13 +123,15 @@ router.put('/:classId/assignments/:assignmentId/grade', teacher, gradeAssignment
 
 // Update an existing assignment
 router.put('/:classId/folders/:folderId/assignments/:assignmentId', student, upload.single('file'), updateAssignment);
-router.get('/:classId/assignments', student, getSubmittedAssignments);
+router.get('/:classId/folders/:folderId/assignmentStudent', student, getSubmittedAssignments);
 // Delete an assignment
 router.delete('/:classId/folders/:folderId/assignments/:assignmentId', student, deleteAssignment);
 router.get('/faculty/:facultyId/classes', student, getClassesByFaculty);
 router.post('/:classId/join', student, joinClass);
 router.get('/:classId/enrollment-status', student, checkEnrollmentStatus);
 router.get('/:classId/FolderStudent', student, getFoldersForStudent);
+
+router.get('/:classId/students',teacher ,getStudentsInClass);
 
 
 

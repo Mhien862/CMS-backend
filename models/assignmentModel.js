@@ -109,7 +109,25 @@ const Assignment = {
     `;
     const result = await pool.query(query, [studentId, classId]);
     return result.rows;
+  },
+  async findByStudentAndFolderInClass(studentId, classId, folderId) {
+    const query = `
+      SELECT 
+        a.*,
+        f.name as folder_name,
+        c.name as class_name
+      FROM assignments a
+      JOIN folders f ON a.folder_id = f.id
+      JOIN classes c ON f.class_id = c.id
+      WHERE 
+        a.student_id = $1 
+        AND f.class_id = $2
+        AND f.id = $3
+    `;
+    const result = await pool.query(query, [studentId, classId, folderId]);
+    return result.rows;
   }
 };
+
 
 export default Assignment;

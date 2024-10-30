@@ -453,3 +453,33 @@ export const getFoldersForStudent = async (req, res) => {
         });
     }
 };
+
+
+export const getStudentsInClass = async (req, res) => {
+    const { classId } = req.params;
+    try {
+        const query = `
+            SELECT 
+                u.id,
+                u.username,
+                u.email,
+                sc.joined_at
+            FROM student_classes sc
+            JOIN users u ON sc.student_id = u.id
+            WHERE sc.class_id = $1
+            ORDER BY u.username ASC
+        `;
+        const result = await pool.query(query, [classId]);
+        
+        return res.status(200).json({
+            message: "Students retrieved successfully",
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error fetching students:', error);
+        return res.status(500).json({
+            message: "An error occurred while fetching students",
+            error: error.message
+        });
+    }
+};

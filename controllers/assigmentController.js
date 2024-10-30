@@ -3,6 +3,7 @@ import Folder from '../models/folderModels.js';
 import Class from '../models/classModels.js';  // Adjust the path as needed
 import cloudinary from '../config/cloudiary.js';
 import fs from 'fs';
+import { pool } from '../config/db.js';
 
 
 export const submitAssignment = async (req, res) => {
@@ -118,15 +119,36 @@ export const deleteAssignment = async (req, res) => {
 
 
 export const getSubmittedAssignments = async (req, res) => {
-  const { classId } = req.params;
+  const { classId, folderId } = req.params;
   const studentId = req.user.id;
 
   try {
-    const assignments = await Assignment.findByStudentAndClass(studentId, classId);
+   
+    const folderQuery = `
+      SELECT id FROM folders 
+      WHERE id = $1 AND class_id = $2
+    `;
+    const folderResult = await pool.query(folderQuery, [folderId, classId]);
+    
+    if (folderResult.rows.length === 0) {
+      return res.status(404).json({ 
+        message: "Folder not found or does not belong to this class" 
+      });
+    }
+
+    const assignments = await Assignment.findByStudentAndFolderInClass(
+      studentId, 
+      classId, 
+      folderId
+    );
+    
     res.status(200).json(assignments);
   } catch (error) {
     console.error("Error fetching submitted assignments:", error);
-    res.status(500).json({ message: "An error occurred while fetching assignments", error: error.message });
+    res.status(500).json({ 
+      message: "An error occurred while fetching assignments", 
+      error: error.message 
+    });
   }
 };
 

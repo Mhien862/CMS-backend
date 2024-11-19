@@ -14,9 +14,10 @@ import {
   joinClass,
   getFoldersForStudent,
   checkEnrollmentStatus,
-  getStudentsInClass
+  getStudentsInClass,
+  getStudentClasses
 } from '../controllers/classController.js';
-import { submitAssignment,getAssignmentsByFolder, updateAssignment,deleteAssignment, getSubmittedAssignments, gradeAssignment } from '../controllers/assigmentController.js';
+import { submitAssignment,getAssignmentsByFolder, updateAssignment,deleteAssignment, getSubmittedAssignments, gradeAssignment, getStudentsGradesInClass } from '../controllers/assigmentController.js';
 import { admin, protect, teacher,student } from '../middleware/authMiddleware.js';
 import { upload } from '../middleware/uploadMiddleware.js';
 
@@ -25,16 +26,23 @@ import { upload } from '../middleware/uploadMiddleware.js';
 const router = Router();
 
 
-// Existing routes
+
+// routes/classRoutes.js
+
+router.get('/:classId/students/grades', teacher, getStudentsGradesInClass);
+router.get('/students/:studentId/classes', teacher, getStudentClasses);
+
+// Các route khác giữ nguyên
 router.post('/create', admin, createClass);
 router.get('/listClasses', admin, getAllClasses);
 router.get('/:id', getClassById);
 router.get('/availableTeachers/:facultyId', admin, getAvailableTeachers);
 router.put('/updateClass/:id', admin, updateClass);
 router.delete('/deleteClass/:id', admin, deleteClass);
-router.get('/information/:classId', getClassById, admin);
 router.get('/teacher/:teacherId', teacher, getClassesByTeacherId);
 router.post('/teacherCheckClass', teacher, teacherCheckClass);
+
+
 
 // New routes for folder management
 /**
@@ -132,6 +140,13 @@ router.get('/:classId/enrollment-status', student, checkEnrollmentStatus);
 router.get('/:classId/FolderStudent', student, getFoldersForStudent);
 
 router.get('/:classId/students',teacher ,getStudentsInClass);
+
+router.get('/:classId/students/grades',teacher ,getStudentsGradesInClass);
+
+// routes/classRoutes.js
+// router.get('/grades/all-classes', getAllStudentGrades);
+
+
 
 
 

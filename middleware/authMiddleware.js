@@ -57,36 +57,39 @@ export const teacher = async (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
-    console.log('No token provided');
     return res.status(401).json({ message: "No token, authorization denied" });
   }
 
   try {
-    console.log('Decoding token');
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     console.log('Decoded token:', decoded);
-    
+
     if (decoded.role !== 2) {
-      console.log('User is not a teacher. Role:', decoded.role);
       return res.status(403).json({ message: "Access denied. Teacher rights required." });
     }
 
-    const classId = req.params.classId;
-    console.log('ClassId from params:', classId);
+    const path = req.path;
+    console.log('Request path:', path);
 
-    if (classId) {
-      console.log('Checking if teacher is assigned to class');
+    // Specific routes that need class validation
+    const needsClassCheck = path.includes('/students/grades');
+
+    if (needsClassCheck) {
+      const classId = req.params.classId;
+      console.log('ClassId from params:', classId);
+
+      if (!classId) {
+        return res.status(400).json({ message: "Class ID is required" });
+      }
+
       const query = 'SELECT * FROM classes WHERE id = $1 AND teacher_id = $2';
       const result = await pool.query(query, [classId, decoded.id]);
-      console.log('Query result:', result.rows);
 
       if (result.rows.length === 0) {
-        console.log(`Teacher (ID: ${decoded.id}) not assigned to class (ID: ${classId})`);
-        return res.status(403).json({ message: "Access denied. You are not assigned to this class." });
+        return res.status(403).json({ message: "Not authorized for this class" });
       }
     }
 
-    console.log('Teacher verification successful');
     req.user = decoded;
     next();
   } catch (error) {

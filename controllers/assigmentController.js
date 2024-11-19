@@ -1,6 +1,6 @@
 import Assignment from '../models/assignmentModel.js';
 import Folder from '../models/folderModels.js';
-import Class from '../models/classModels.js';  // Adjust the path as needed
+import Class from '../models/classModels.js';  
 import cloudinary from '../config/cloudiary.js';
 import fs from 'fs';
 import { pool } from '../config/db.js';
@@ -209,5 +209,52 @@ export const gradeAssignment = async (req, res) => {
   } catch (error) {
     console.error("Error grading assignment:", error);
     res.status(500).json({ message: "An error occurred while grading the assignment", error: error.message });
+  }
+};
+
+
+export const getStudentsGradesInClass = async (req, res) => {
+  const { classId } = req.params;
+  
+  try {
+    const query = `
+      SELECT 
+        u.id,
+        u.username,
+        u.email,
+        sc.joined_at,
+        COALESCE(
+          jsonb_agg(
+            jsonb_build_object(
+              'assignment_id', a.id,
+              'folder_name', f.name,
+              'title', a.title,
+              'grade', a.grade
+            )
+          ) FILTER (WHERE a.id IS NOT NULL),
+          '[]'
+        ) as assignments,
+        ROUND(AVG(a.grade)::numeric, 2) as average_grade
+      FROM student_classes sc
+      JOIN users u ON sc.student_id = u.id
+      LEFT JOIN assignments a ON a.student_id = u.id
+      LEFT JOIN folders f ON a.folder_id = f.id
+      WHERE sc.class_id = $1 AND f.class_id = $1
+      GROUP BY u.id, u.username, u.email, sc.joined_at
+      ORDER BY u.username
+    `;
+    
+    const result = await pool.query(query, [classId]);
+    
+    res.status(200).json({
+      message: "Students grades retrieved successfully",
+      data: result.rows
+    });
+  } catch (error) {
+    console.error('Error getting students grades:', error);
+    res.status(500).json({
+      message: "Failed to get students grades",
+      error: error.message
+    });
   }
 };

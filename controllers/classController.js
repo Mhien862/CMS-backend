@@ -483,3 +483,63 @@ export const getStudentsInClass = async (req, res) => {
         });
     }
 };
+
+
+export const getStudentClasses = async (req, res) => {
+    const { studentId } = req.params;
+    const teacherId = req.user.id; // Lấy teacherId từ token
+
+    if (!studentId) {
+        return res.status(400).json({ 
+            message: "Student ID is required"
+        });
+    }
+
+    try {
+        // Kiểm tra xem student có trong bất kỳ lớp nào của teacher không
+        const checkQuery = `
+            SELECT DISTINCT sc.class_id
+            FROM student_classes sc
+            JOIN classes c ON sc.class_id = c.id
+            WHERE sc.student_id = $1 AND c.teacher_id = $2
+        `;
+        const checkResult = await pool.query(checkQuery, [studentId, teacherId]);
+
+        if (checkResult.rows.length === 0) {
+            return res.status(403).json({
+                message: "This student is not in any of your classes"
+            });
+        }
+
+        // Nếu có quyền, lấy thông tin các lớp của student
+        const query = `
+            SELECT 
+                c.name AS class_name,
+                u.username AS teacher_name,
+                sc.joined_at,
+                ROUND(AVG(CASE WHEN a.grade IS NOT NULL THEN a.grade ELSE null END)::numeric, 2) as average_grade
+            FROM student_classes sc
+            JOIN classes c ON sc.class_id = c.id
+            JOIN users u ON c.teacher_id = u.id
+            LEFT JOIN assignments a ON a.student_id = sc.student_id AND a.folder_id IN (
+                SELECT id FROM folders WHERE class_id = c.id
+            )
+            WHERE sc.student_id = $1
+            GROUP BY c.name, u.username, sc.joined_at, c.id
+            ORDER BY sc.joined_at DESC
+        `;
+        
+        const result = await pool.query(query, [studentId]);
+        
+        res.status(200).json({
+            message: "Student classes retrieved successfully",
+            data: result.rows
+        });
+    } catch (error) {
+        console.error('Error:', error);
+        res.status(500).json({
+            message: "Failed to fetch student classes",
+            error: error.message
+        });
+    }
+};

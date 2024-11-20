@@ -543,3 +543,95 @@ export const getStudentClasses = async (req, res) => {
         });
     }
 };
+
+export const createAcademicYear = async (req, res) => {
+    const { name, start_year, end_year } = req.body;
+    try {
+        const query = `
+            INSERT INTO academic_years (name, start_year, end_year)
+            VALUES ($1, $2, $3)
+            RETURNING *
+        `;
+        const values = [name, start_year, end_year];
+        const result = await pool.query(query, values);
+
+        return res.status(201).json({
+            message: "Academic year created successfully",
+            data: result.rows[0],
+        });
+    } catch (error) {
+        console.error('Error creating academic year:', error);
+        return res.status(500).json({
+            message: "Failed to create academic year",
+            error: error.message,
+        });
+    }
+};
+
+export const getAcademicYears = async (req, res) => {
+    try {
+        const query = `
+            SELECT * FROM academic_years
+            ORDER BY start_year ASC
+        `;
+        const result = await pool.query(query);
+
+        return res.status(200).json({
+            message: "Academic years retrieved successfully",
+            data: result.rows,
+        });
+    } catch (error) {
+        console.error('Error fetching academic years:', error);
+        return res.status(500).json({
+            message: "Failed to fetch academic years",
+            error: error.message,
+        });
+    }
+};
+
+export const createSemester = async (req, res) => {
+    const { name, academic_year_id } = req.body;
+    try {
+        const query = `
+            INSERT INTO semesters (name, academic_year_id)
+            VALUES ($1, $2)
+            RETURNING *
+        `;
+        const values = [name, academic_year_id];
+        const result = await pool.query(query, values);
+
+        return res.status(201).json({
+            message: "Semester created successfully",
+            data: result.rows[0],
+        });
+    } catch (error) {
+        console.error('Error creating semester:', error);
+        return res.status(500).json({
+            message: "Failed to create semester",
+            error: error.message,
+        });
+    }
+};
+
+export const getSemestersByYear = async (req, res) => {
+    const { academicYearId } = req.params;
+    try {
+        const query = `
+            SELECT * FROM semesters
+            WHERE academic_year_id = $1
+            ORDER BY id ASC
+        `;
+        const result = await pool.query(query, [academicYearId]);
+
+        return res.status(200).json({
+            message: "Semesters retrieved successfully",
+            data: result.rows,
+        });
+    } catch (error) {
+        console.error('Error fetching semesters:', error);
+        return res.status(500).json({
+            message: "Failed to fetch semesters",
+            error: error.message,
+        });
+    }
+};

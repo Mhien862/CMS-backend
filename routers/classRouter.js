@@ -18,8 +18,10 @@ import {
   getStudentClasses
 } from '../controllers/classController.js';
 import { submitAssignment,getAssignmentsByFolder, updateAssignment,deleteAssignment, getSubmittedAssignments, gradeAssignment, getStudentsGradesInClass } from '../controllers/assigmentController.js';
+import { getClassesBySemester } from '../controllers/semesterController.js';
 import { admin, protect, teacher,student } from '../middleware/authMiddleware.js';
 import { upload } from '../middleware/uploadMiddleware.js';
+
 
 
 
@@ -44,80 +46,11 @@ router.post('/teacherCheckClass', teacher, teacherCheckClass);
 
 
 
-// New routes for folder management
-/**
- * @swagger
- * /class/{classId}/createFolder:
- *   post:
- *     summary: Create a new folder in a class
- *     tags: [Classes]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: classId
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *             properties:
- *               name:
- *                 type: string
- *     responses:
- *       201:
- *         description: Folder created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Folder'
- *       400:
- *         description: Invalid input
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Class not found
- */
+
 router.post('/:classId/createFolder', teacher, createFolder);
 
-/**
- * @swagger
- * /class/{classId}/folders:
- *   get:
- *     summary: Get folders in a class
- *     tags: [Classes]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: classId
- *         required: true
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: List of folders in the class
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Folder'
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Class not found
- */
+
+ 
 router.get('/:classId/folders', teacher, getFoldersByClassId);
 router.post('/:classId/folders/:folderId/assignments',
   student,
@@ -143,8 +76,9 @@ router.get('/:classId/students',teacher ,getStudentsInClass);
 
 router.get('/:classId/students/grades',teacher ,getStudentsGradesInClass);
 
-// routes/classRoutes.js
-// router.get('/grades/all-classes', getAllStudentGrades);
+router.get("/semester/:semesterId", admin, getClassesBySemester);
+
+
 
 
 
@@ -153,24 +87,3 @@ router.get('/:classId/students/grades',teacher ,getStudentsGradesInClass);
 
 export default router;
 
-/**
- * @swagger
- * components:
- *   schemas:
- *     Folder:
- *       type: object
- *       required:
- *         - id
- *         - name
- *         - class_id
- *       properties:
- *         id:
- *           type: string
- *           description: The auto-generated id of the folder
- *         name:
- *           type: string
- *           description: The name of the folder
- *         class_id:
- *           type: string
- *           description: The id of the class this folder belongs to
- */

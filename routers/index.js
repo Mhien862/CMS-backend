@@ -5,6 +5,7 @@ import authRoutes from './authRouter.js';
 import classRoute from './classRouter.js';
 import { adminRegister, admin } from '../middleware/authMiddleware.js';
 import facultyRouter from './facultyRouter.js';
+import AcademicYear from './academicYearRouter.js';
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use('/user', userRoutes, getListUser,admin);
 router.use('/auth', authRoutes, adminRegister, admin);
 router.use('/class',classRoute, admin);
 router.use('/faculty',facultyRouter ,admin);
+router.use('/academicyear',AcademicYear,admin);
 
 export default router;

@@ -5,32 +5,38 @@ import Folder from '../models/folderModels.js';
 import StudentClasses from '../models/studentClassesModel.js';
 
 export const createClass = async (req, res) => {
-    const { name, faculty_id, teacher_id, password } = req.body;
     try {
-        
-        const query = `
-            INSERT INTO classes (name, faculty_id, teacher_id, password)
-            VALUES ($1, $2, $3, $4)
-            RETURNING *
-        `;
-        const values = [name, faculty_id, teacher_id, password];
-        const result = await pool.query(query, values);
-        return res.status(201).json({
-            message: "Class created successfully",
-            data: result.rows[0]
-        });
+        const data = await Class.create(req.body);
+        res.status(201).json({ message: "Class created successfully", data });
     } catch (error) {
-        return res.status(500).json({
-            message: "An error occurred while creating the class",
-            error: error.message
-        });
+        res.status(500).json({ message: "Failed to create class", error: error.message });
+    }
+};
+
+export const getClassesBySemester = async (req, res) => {
+    try {
+        const data = await Class.getBySemester(req.params.semesterId);
+        res.status(200).json({ message: "Classes retrieved successfully", data });
+    } catch (error) {
+        res.status(500).json({ message: "Failed to fetch classes", error: error.message });
     }
 };
 
 export const getAllClasses = async (req, res) => {
     try {
         const query = `
-            SELECT * FROM classes ORDER BY id ASC
+            SELECT 
+                c.*,
+                f.name AS faculty_name,
+                u.username AS teacher_name,
+                s.name AS semester_name,
+                ay.name AS academic_year_name
+            FROM classes c
+            LEFT JOIN faculties f ON c.faculty_id = f.id
+            LEFT JOIN users u ON c.teacher_id = u.id
+            LEFT JOIN semesters s ON c.semester_id = s.id
+            LEFT JOIN academic_years ay ON s.academic_year_id = ay.id
+            ORDER BY c.id ASC
         `;
         const result = await pool.query(query);
         return res.status(200).json({
@@ -49,10 +55,19 @@ export const getClassById = async (req, res) => {
     const { id } = req.params;
     try {
         const query = `
-            SELECT c.*, f.name AS faculty_name, u.username AS teacher_name
+            SELECT 
+                c.*, 
+                f.name AS faculty_name, 
+                u.username AS teacher_name,
+                s.name AS semester_name,
+                ay.name AS academic_year_name,
+                s.id AS semester_id,
+                ay.id AS academic_year_id
             FROM classes c
             LEFT JOIN faculties f ON c.faculty_id = f.id
             LEFT JOIN users u ON c.teacher_id = u.id
+            LEFT JOIN semesters s ON c.semester_id = s.id
+            LEFT JOIN academic_years ay ON s.academic_year_id = ay.id
             WHERE c.id = $1
         `;
         const result = await pool.query(query, [id]);
@@ -65,29 +80,33 @@ export const getClassById = async (req, res) => {
 
         return res.status(200).json({
             message: "Get class information successfully",
-            data: result.rows[0]
+            data: result.rows[0],
         });
     } catch (error) {
         return res.status(500).json({
             message: "An error occurred while fetching class information",
-            error: error.message
+            error: error.message,
         });
     }
 };
 
+
 export const updateClass = async (req, res) => {
     const { id } = req.params;
-    const { name, faculty_id, teacher_id, password } = req.body;
+    const { name, faculty_id, teacher_id, password, semester_id } = req.body;
     try {
-       
-
         const query = `
             UPDATE classes
-            SET name = $1, faculty_id = $2, teacher_id = $3, password = COALESCE($4, password)
-            WHERE id = $5
+            SET 
+                name = $1, 
+                faculty_id = $2, 
+                teacher_id = $3, 
+                password = COALESCE($4, password),
+                semester_id = $5
+            WHERE id = $6
             RETURNING *
         `;
-        const values = [name, faculty_id, teacher_id, password, id];
+        const values = [name, faculty_id, teacher_id, password, semester_id, id];
         const result = await pool.query(query, values);
 
         if (result.rows.length === 0) {
@@ -98,15 +117,16 @@ export const updateClass = async (req, res) => {
 
         return res.status(200).json({
             message: "Class updated successfully",
-            data: result.rows[0]
+            data: result.rows[0],
         });
     } catch (error) {
         return res.status(500).json({
             message: "An error occurred while updating the class",
-            error: error.message
+            error: error.message,
         });
     }
 };
+
 
 export const deleteClass = async (req, res) => {
     const { id } = req.params;

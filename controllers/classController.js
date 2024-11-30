@@ -382,7 +382,7 @@ export const joinClass = async (req, res) => {
             }
         }
 
-        // If not already joined or password changed, verify the new password
+       
         const classQuery = 'SELECT * FROM classes WHERE id = $1';
         const classResult = await pool.query(classQuery, [classId]);
 
@@ -395,7 +395,7 @@ export const joinClass = async (req, res) => {
             return res.status(402).json({ message: "Incorrect password" });
         }
 
-        // Insert or update student enrollment with new password
+     
         const joinQuery = `
             INSERT INTO student_classes (student_id, class_id, class_password)
             VALUES ($1, $2, $3)
@@ -458,7 +458,6 @@ export const getFoldersForStudent = async (req, res) => {
             return res.status(403).json({ message: "You are not enrolled in this class" });
         }
 
-        // If student is enrolled, get the folders
         const foldersQuery = 'SELECT * FROM folders WHERE class_id = $1';
         const foldersResult = await pool.query(foldersQuery, [classId]);
 
@@ -507,7 +506,7 @@ export const getStudentsInClass = async (req, res) => {
 
 export const getStudentClasses = async (req, res) => {
     const { studentId } = req.params;
-    const teacherId = req.user.id; // Lấy teacherId từ token
+    const teacherId = req.user.id; 
 
     if (!studentId) {
         return res.status(400).json({ 
@@ -516,7 +515,7 @@ export const getStudentClasses = async (req, res) => {
     }
 
     try {
-        // Kiểm tra xem student có trong bất kỳ lớp nào của teacher không
+       
         const checkQuery = `
             SELECT DISTINCT sc.class_id
             FROM student_classes sc
@@ -531,7 +530,7 @@ export const getStudentClasses = async (req, res) => {
             });
         }
 
-        // Nếu có quyền, lấy thông tin các lớp của student
+    
         const query = `
             SELECT 
                 c.name AS class_name,

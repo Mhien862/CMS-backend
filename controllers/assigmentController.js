@@ -99,7 +99,7 @@ export const deleteAssignment = async (req, res) => {
       return res.status(403).json({ message: "You are not authorized to delete this assignment" });
     }
 
-    // Delete file from Cloudinary if exists
+  
     if (assignment.file_url) {
       const publicId = assignment.file_url.split('/').pop().split('.')[0];
       await cloudinary.uploader.destroy(publicId);

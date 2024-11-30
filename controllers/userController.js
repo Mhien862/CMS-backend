@@ -214,7 +214,7 @@ export const getMe = async (req, res) => {
             });
         }
 
-        // Return user information
+   
         return res.status(200).json({
             message: "User information retrieved successfully",
             user: user

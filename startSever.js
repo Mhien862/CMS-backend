@@ -26,11 +26,11 @@ app.use("/", router);
 
 const startServer = async () => {
   try {
-    // Kết nối đến cơ sở dữ liệu
+    
     await connectDB();
     console.log('Connected to PostgreSQL database');
 
-    // Tạo bảng
+   
     try {
       await User.createTable();
       console.log('Users table checked/created');
@@ -53,10 +53,10 @@ const startServer = async () => {
       throw tableError;
     }
 
-    // Thiết lập Swagger
+   
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
 
-    // Khởi động server
+  
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`Swagger UI is available at http://localhost:${PORT}/api-docs`);
@@ -65,7 +65,7 @@ const startServer = async () => {
     console.error('Failed to start server:', error.message);
     console.error('Server start error stack:', error.stack);
     
-    // Kiểm tra lỗi cụ thể
+  
     if (error.code === 'ECONNREFUSED') {
       console.error('Could not connect to the database. Please check your database configuration and ensure it is running.');
     } else if (error.code === 'ENOTFOUND') {
@@ -76,14 +76,14 @@ const startServer = async () => {
       console.error('Database does not exist. Please check your DB_NAME environment variable.');
     }
 
-    // Log thông tin môi trường (ẩn thông tin nhạy cảm)
+  
     console.log('Environment variables:');
     console.log('PORT:', process.env.PORT);
     console.log('DB_HOST:', process.env.DB_HOST);
     console.log('DB_USER:', process.env.DB_USER);
     console.log('DB_NAME:', process.env.DB_NAME);
     console.log('DB_PORT:', process.env.DB_PORT);
-    // Không log DB_PASSWORD vì lý do bảo mật
+ 
 
     process.exit(1);
   }

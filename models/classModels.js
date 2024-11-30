@@ -1,7 +1,7 @@
 import { pool } from "../config/db.js";
 
 const Class = {
-    // Tạo bảng classes với cột semester_id
+    
     async createTable() {
         const query = `
             CREATE TABLE IF NOT EXISTS classes (
@@ -16,7 +16,7 @@ const Class = {
         await pool.query(query);
     },
 
-    // Tạo một lớp học mới với semester_id
+   
     async create(classData) {
         const { name, faculty_id, teacher_id, password, semester_id } = classData;
         const query = `
@@ -41,14 +41,14 @@ const Class = {
         return result.rows;
     },
 
-    // Tìm lớp học theo ID
+  
     async findById(id) {
         const query = 'SELECT * FROM classes WHERE id = $1';
         const result = await pool.query(query, [id]);
         return result.rows[0];
     },
 
-    // Lấy danh sách tất cả các lớp học kèm thông tin học kỳ, khoa và giáo viên
+   
     async getAllClasses() {
         const query = `
             SELECT 
@@ -65,7 +65,7 @@ const Class = {
         return result.rows;
     },
 
-    // Cập nhật thông tin lớp học (bao gồm semester_id)
+ 
     async updateClass(id, updateData) {
         const { name, faculty_id, teacher_id, semester_id } = updateData;
         const query = `
@@ -79,14 +79,14 @@ const Class = {
         return result.rows[0];
     },
 
-    // Xóa một lớp học
+ 
     async deleteClass(id) {
         const query = 'DELETE FROM classes WHERE id = $1 RETURNING *';
         const result = await pool.query(query, [id]);
         return result.rows[0];
     },
 
-    // Lấy danh sách giáo viên theo khoa
+   
     async getAvailableTeachers(faculty_id) {
         const query = `
             SELECT * FROM users
@@ -96,7 +96,6 @@ const Class = {
         return result.rows;
     },
 
-    // Lấy thông tin chi tiết của một lớp học (bao gồm semester_id và tên học kỳ)
     async getClassWithDetails(id) {
         const query = `
             SELECT 
@@ -114,7 +113,7 @@ const Class = {
         return result.rows[0];
     },
 
-    // Lấy danh sách các lớp theo học kỳ
+
     async getClassesBySemester(semester_id) {
         const query = `
             SELECT 

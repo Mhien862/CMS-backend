@@ -29,12 +29,12 @@ const router = Router();
 
 
 
-// routes/classRoutes.js
+
 
 router.get('/:classId/students/grades', teacher, getStudentsGradesInClass);
 router.get('/students/:studentId/classes', teacher, getStudentClasses);
 
-// Các route khác giữ nguyên
+
 router.post('/create', admin, createClass);
 router.get('/listClasses', admin, getAllClasses);
 router.get('/:id', getClassById);
@@ -58,14 +58,14 @@ router.post('/:classId/folders/:folderId/assignments',
   submitAssignment
 );
 
-// Get all assignments in a folder
+
 router.get('/:classId/folders/:folderId/assignments', teacher, getAssignmentsByFolder);
 router.put('/:classId/assignments/:assignmentId/grade', teacher, gradeAssignment);
 
-// Update an existing assignment
+
 router.put('/:classId/folders/:folderId/assignments/:assignmentId', student, upload.single('file'), updateAssignment);
 router.get('/:classId/folders/:folderId/assignmentStudent', student, getSubmittedAssignments);
-// Delete an assignment
+
 router.delete('/:classId/folders/:folderId/assignments/:assignmentId', student, deleteAssignment);
 router.get('/faculty/:facultyId/classes', student, getClassesByFaculty);
 router.post('/:classId/join', student, joinClass);

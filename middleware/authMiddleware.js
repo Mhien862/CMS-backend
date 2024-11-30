@@ -71,7 +71,7 @@ export const teacher = async (req, res, next) => {
     const path = req.path;
     console.log('Request path:', path);
 
-    // Specific routes that need class validation
+  
     const needsClassCheck = path.includes('/students/grades');
 
     if (needsClassCheck) {

@@ -1,22 +1,34 @@
-import { pool } from "../config/db.js";
+import User from '../models/userModels.js';
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
 export const getOne = async (req, res) => {
     const { userId } = req.params;
-    console.log(userId);
-    return res.status(200).json({
-        message: "Get user successfully",
-    });
+    try {
+        const user = await User.getUserWithDetails(userId);
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
+        return res.status(200).json({
+            message: "Get user successfully",
+            data: user
+        });
+    } catch (error) {
+        return res.status(500).json({
+            message: "An error occurred while fetching user",
+            error: error.message
+        });
+    }
 };
 
 export const getListUser = async (req, res) => {
     try {
-        const query = 'SELECT * FROM users ORDER BY id ASC'; 
-        const result = await pool.query(query);
+        const users = await User.getAllUsers();
         return res.status(200).json({
             message: "Get list user successfully",
-            data: result.rows
+            data: users
         });
     } catch (error) {
         return res.status(500).json({
@@ -26,13 +38,15 @@ export const getListUser = async (req, res) => {
     }
 };
 
-
-
 export const deleteUser = async (req, res) => {
     const { userId } = req.params;
     try {
-        const query = 'DELETE FROM users WHERE id = $1';
-        await pool.query(query, [userId]);
+        const deletedUser = await User.deleteUser(userId);
+        if (!deletedUser) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
         return res.status(200).json({
             message: "Delete user successfully",
         });
@@ -42,26 +56,22 @@ export const deleteUser = async (req, res) => {
             error: error.message
         });
     }
-}
+};
 
 export const updateUser = async (req, res) => {
     const { userId } = req.params;
     const { username, email, role_id, faculty_id, is_active } = req.body;
 
     try {
-        const query = `
-            UPDATE users 
-            SET username = $1, 
-                email = $2, 
-                role_id = $3, 
-                faculty_id = $4, 
-                is_active = $5
-            WHERE id = $6
-            RETURNING id, username, email, role_id, faculty_id, is_active`;
+        const updatedUser = await User.updateUser(userId, {
+            username,
+            email,
+            role_id,
+            faculty_id: faculty_id || null,
+            is_active
+        });
 
-        const result = await pool.query(query, [username, email, role_id, faculty_id || null, is_active, userId]);
-
-        if (result.rows.length === 0) {
+        if (!updatedUser) {
             return res.status(404).json({
                 message: "User not found",
             });
@@ -69,7 +79,7 @@ export const updateUser = async (req, res) => {
 
         return res.status(200).json({
             message: "Update user successfully",
-            user: result.rows[0]
+            user: updatedUser
         });
     } catch (error) {
         return res.status(500).json({
@@ -77,18 +87,16 @@ export const updateUser = async (req, res) => {
             error: error.message
         });
     }
-}
+};
 
 export const getRole = async (req, res) => {
     try {
-        const query = 'SELECT * FROM roles';
-        const result = await pool.query(query);
+        const roles = await User.getRoles();
         return res.status(200).json({
             message: "Get list role successfully",
-            data: result.rows
+            data: roles
         });
-    }
-    catch (error) {
+    } catch (error) {
         return res.status(500).json({
             message: "An error occurred while fetching roles",
             error: error.message
@@ -98,11 +106,10 @@ export const getRole = async (req, res) => {
 
 export const getFaculty = async (req, res) => {
     try {
-        const query = 'SELECT * FROM faculties';
-        const result = await pool.query(query)
+        const faculties = await User.getFaculties();
         return res.status(200).json({
             message: "Get list faculty successfully",
-            data: result.rows
+            data: faculties
         });
     } catch (error) {
         return res.status(500).json({
@@ -115,11 +122,15 @@ export const getFaculty = async (req, res) => {
 export const getInformationUser = async (req, res) => {
     const { userId } = req.params;
     try {
-        const query = 'SELECT * FROM users WHERE id = $1';
-        const result = await pool.query(query, [userId]);
+        const user = await User.getUserWithDetails(userId);
+        if (!user) {
+            return res.status(404).json({
+                message: "User not found"
+            });
+        }
         return res.status(200).json({
             message: "Get user information successfully",
-            data: result.rows[0]
+            data: user
         });
     } catch (error) {
         return res.status(500).json({
@@ -134,15 +145,11 @@ export const updateUserStatus = async (req, res) => {
     const { is_active } = req.body;
 
     try {
-        const query = `
-            UPDATE users 
-            SET is_active = $1
-            WHERE id = $2
-            RETURNING id, username, email, role_id, faculty_id, is_active`;
+        const updatedUser = is_active ? 
+            await User.activateUser(userId) : 
+            await User.deactivateUser(userId);
 
-        const result = await pool.query(query, [is_active, userId]);
-
-        if (result.rows.length === 0) {
+        if (!updatedUser) {
             return res.status(404).json({
                 message: "User not found",
             });
@@ -150,7 +157,7 @@ export const updateUserStatus = async (req, res) => {
 
         return res.status(200).json({
             message: "User status updated successfully",
-            user: result.rows[0]
+            user: updatedUser
         });
     } catch (error) {
         return res.status(500).json({
@@ -162,11 +169,10 @@ export const updateUserStatus = async (req, res) => {
 
 export const listTeacher = async (req, res) => {
     try {
-        const query = 'SELECT * FROM users WHERE role_id = 2';
-        const result = await pool.query(query);
+        const teachers = await User.getTeachers();
         return res.status(200).json({
             message: "Get list teacher successfully",
-            data: result.rows
+            data: teachers
         });
     } catch (error) {
         return res.status(500).json({
@@ -174,47 +180,28 @@ export const listTeacher = async (req, res) => {
             error: error.message
         });
     }
-}
-
-
+};
 
 export const getMe = async (req, res) => {
     try {
-        
         const token = req.headers.authorization?.split(" ")[1];
         if (!token) {
             return res.status(401).json({ message: "No token provided" });
         }
 
-       
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.getUserWithDetails(decoded.id);
 
-        
-        const query = `
-            SELECT u.id, u.username, u.email, u.role_id, u.faculty_id, u.is_active,
-                   r.name AS role_name, f.name AS faculty_name
-            FROM users u
-            LEFT JOIN roles r ON u.role_id = r.id
-            LEFT JOIN faculties f ON u.faculty_id = f.id
-            WHERE u.id = $1
-        `;
-
-        const result = await pool.query(query, [decoded.id]);
-
-        if (result.rows.length === 0) {
+        if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
-        const user = result.rows[0];
-
-        
         if (!user.is_active) {
             return res.status(403).json({
                 message: "Your account is inactive. Please contact an administrator.",
             });
         }
 
-   
         return res.status(200).json({
             message: "User information retrieved successfully",
             user: user
@@ -236,19 +223,14 @@ export const updatePassword = async (req, res) => {
     const { newPassword } = req.body;
 
     try {
-    
         const saltRounds = 10;
         const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
 
-        const query = `
-            UPDATE users 
-            SET password = $1
-            WHERE id = $2
-            RETURNING id`;
+        const updatedUser = await User.updateUser(userId, {
+            password: hashedPassword
+        });
 
-        const result = await pool.query(query, [hashedPassword, userId]);
-
-        if (result.rows.length === 0) {
+        if (!updatedUser) {
             return res.status(404).json({
                 message: "User not found",
             });
@@ -265,7 +247,3 @@ export const updatePassword = async (req, res) => {
         });
     }
 };
-
-
-
-

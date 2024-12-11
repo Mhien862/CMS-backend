@@ -3,8 +3,6 @@ import Folder from '../models/folderModels.js';
 import Class from '../models/classModels.js';  
 import cloudinary from '../config/cloudiary.js';
 import fs from 'fs';
-import { pool } from '../config/db.js';
-
 
 export const submitAssignment = async (req, res) => {
   const { classId, folderId } = req.params;
@@ -19,14 +17,11 @@ export const submitAssignment = async (req, res) => {
     }
 
     if (req.file) {
-      // Upload to Cloudinary
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: 'assignments',
         resource_type: 'auto'
       });
       fileUrl = result.secure_url;
-
-      // Delete local file after uploading to Cloudinary
       fs.unlinkSync(req.file.path);
     }
 
@@ -38,7 +33,10 @@ export const submitAssignment = async (req, res) => {
     });
   } catch (error) {
     console.error("Error submitting assignment:", error);
-    res.status(500).json({ message: "An error occurred while submitting the assignment", error: error.message });
+    res.status(500).json({ 
+      message: "An error occurred while submitting the assignment", 
+      error: error.message 
+    });
   }
 };
 
@@ -55,7 +53,9 @@ export const updateAssignment = async (req, res) => {
     }
 
     if (assignment.student_id !== studentId) {
-      return res.status(403).json({ message: "You are not authorized to update this assignment" });
+      return res.status(403).json({ 
+        message: "You are not authorized to update this assignment" 
+      });
     }
 
     if (req.file) {
@@ -69,11 +69,15 @@ export const updateAssignment = async (req, res) => {
         resource_type: 'auto'
       });
       fileUrl = result.secure_url;
-      // Delete the local file after uploading to Cloudinary
       fs.unlinkSync(req.file.path);
     }
 
-    const updatedAssignment = await Assignment.update(assignmentId, title, description, fileUrl || assignment.file_url);
+    const updatedAssignment = await Assignment.update(
+      assignmentId, 
+      title, 
+      description, 
+      fileUrl || assignment.file_url
+    );
     
     res.status(200).json({
       message: "Assignment updated successfully",
@@ -81,7 +85,10 @@ export const updateAssignment = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating assignment:", error);
-    res.status(500).json({ message: "An error occurred while updating the assignment", error: error.message });
+    res.status(500).json({ 
+      message: "An error occurred while updating the assignment", 
+      error: error.message 
+    });
   }
 };
 
@@ -96,10 +103,11 @@ export const deleteAssignment = async (req, res) => {
     }
 
     if (assignment.student_id !== studentId) {
-      return res.status(403).json({ message: "You are not authorized to delete this assignment" });
+      return res.status(403).json({ 
+        message: "You are not authorized to delete this assignment" 
+      });
     }
 
-  
     if (assignment.file_url) {
       const publicId = assignment.file_url.split('/').pop().split('.')[0];
       await cloudinary.uploader.destroy(publicId);
@@ -112,25 +120,20 @@ export const deleteAssignment = async (req, res) => {
     });
   } catch (error) {
     console.error("Error deleting assignment:", error);
-    res.status(500).json({ message: "An error occurred while deleting the assignment", error: error.message });
+    res.status(500).json({ 
+      message: "An error occurred while deleting the assignment", 
+      error: error.message 
+    });
   }
 };
-
-
 
 export const getSubmittedAssignments = async (req, res) => {
   const { classId, folderId } = req.params;
   const studentId = req.user.id;
 
   try {
-   
-    const folderQuery = `
-      SELECT id FROM folders 
-      WHERE id = $1 AND class_id = $2
-    `;
-    const folderResult = await pool.query(folderQuery, [folderId, classId]);
-    
-    if (folderResult.rows.length === 0) {
+    const folder = await Folder.findById(folderId);
+    if (!folder || folder.class_id !== parseInt(classId)) {
       return res.status(404).json({ 
         message: "Folder not found or does not belong to this class" 
       });
@@ -164,7 +167,9 @@ export const getAssignmentsByFolder = async (req, res) => {
 
     const classData = await Class.findById(folder.class_id);
     if (classData.teacher_id !== teacherId) {
-      return res.status(403).json({ message: "You are not authorized to view these assignments" });
+      return res.status(403).json({ 
+        message: "You are not authorized to view these assignments" 
+      });
     }
 
     const assignments = await Assignment.findByFolderId(folderId);
@@ -175,7 +180,10 @@ export const getAssignmentsByFolder = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching assignments:", error);
-    res.status(500).json({ message: "An error occurred while fetching the assignments", error: error.message });
+    res.status(500).json({ 
+      message: "An error occurred while fetching the assignments", 
+      error: error.message 
+    });
   }
 };
 
@@ -197,10 +205,16 @@ export const gradeAssignment = async (req, res) => {
 
     const classData = await Class.findById(folder.class_id);
     if (classData.teacher_id !== teacherId) {
-      return res.status(403).json({ message: "You are not authorized to grade this assignment" });
+      return res.status(403).json({ 
+        message: "You are not authorized to grade this assignment" 
+      });
     }
 
-    const updatedAssignment = await Assignment.updateGradeAndComment(assignmentId, grade, comment);
+    const updatedAssignment = await Assignment.updateGradeAndComment(
+      assignmentId, 
+      grade, 
+      comment
+    );
     
     res.status(200).json({
       message: "Assignment graded successfully",
@@ -208,47 +222,22 @@ export const gradeAssignment = async (req, res) => {
     });
   } catch (error) {
     console.error("Error grading assignment:", error);
-    res.status(500).json({ message: "An error occurred while grading the assignment", error: error.message });
+    res.status(500).json({ 
+      message: "An error occurred while grading the assignment", 
+      error: error.message 
+    });
   }
 };
-
 
 export const getStudentsGradesInClass = async (req, res) => {
   const { classId } = req.params;
   
   try {
-    const query = `
-      SELECT 
-        u.id,
-        u.username,
-        u.email,
-        sc.joined_at,
-        COALESCE(
-          jsonb_agg(
-            jsonb_build_object(
-              'assignment_id', a.id,
-              'folder_name', f.name,
-              'title', a.title,
-              'grade', a.grade
-            )
-          ) FILTER (WHERE a.id IS NOT NULL),
-          '[]'
-        ) as assignments,
-        ROUND(AVG(a.grade)::numeric, 2) as average_grade
-      FROM student_classes sc
-      JOIN users u ON sc.student_id = u.id
-      LEFT JOIN assignments a ON a.student_id = u.id
-      LEFT JOIN folders f ON a.folder_id = f.id
-      WHERE sc.class_id = $1 AND f.class_id = $1
-      GROUP BY u.id, u.username, u.email, sc.joined_at
-      ORDER BY u.username
-    `;
-    
-    const result = await pool.query(query, [classId]);
+    const grades = await Assignment.getStudentGradesInClass(classId);
     
     res.status(200).json({
       message: "Students grades retrieved successfully",
-      data: result.rows
+      data: grades
     });
   } catch (error) {
     console.error('Error getting students grades:', error);

@@ -52,14 +52,17 @@ const Class = {
     async getAllClasses() {
         const query = `
             SELECT 
-                c.*, 
-                f.name AS faculty_name, 
-                u.username AS teacher_name, 
-                s.name AS semester_name
-            FROM classes c
-            LEFT JOIN faculties f ON c.faculty_id = f.id
-            LEFT JOIN users u ON c.teacher_id = u.id
-            LEFT JOIN semesters s ON c.semester_id = s.id
+            c.*,
+            f.name AS faculty_name,
+            u.username AS teacher_name,
+            s.name AS semester_name,
+            ay.name AS academic_year_name
+        FROM classes c
+        LEFT JOIN faculties f ON c.faculty_id = f.id
+        LEFT JOIN users u ON c.teacher_id = u.id
+        LEFT JOIN semesters s ON c.semester_id = s.id
+        LEFT JOIN academic_years ay ON s.academic_year_id = ay.id
+        ORDER BY c.id ASC
         `;
         const result = await pool.query(query);
         return result.rows;
@@ -98,17 +101,21 @@ const Class = {
 
     async getClassWithDetails(id) {
         const query = `
-            SELECT 
-                c.*, 
-                f.name AS faculty_name, 
-                u.username AS teacher_name, 
-                s.name AS semester_name
-            FROM classes c
-            LEFT JOIN faculties f ON c.faculty_id = f.id
-            LEFT JOIN users u ON c.teacher_id = u.id
-            LEFT JOIN semesters s ON c.semester_id = s.id
-            WHERE c.id = $1
-        `;
+SELECT 
+            c.*,
+            f.name AS faculty_name,
+            u.username AS teacher_name,
+            s.name AS semester_name,
+            ay.name AS academic_year_name,
+            s.id AS semester_id,
+            ay.id AS academic_year_id
+        FROM classes c
+        LEFT JOIN faculties f ON c.faculty_id = f.id
+        LEFT JOIN users u ON c.teacher_id = u.id
+        LEFT JOIN semesters s ON c.semester_id = s.id
+        LEFT JOIN academic_years ay ON s.academic_year_id = ay.id
+        WHERE c.id = $1
+    `;
         const result = await pool.query(query, [id]);
         return result.rows[0];
     },
@@ -128,6 +135,59 @@ const Class = {
         const result = await pool.query(query, [semester_id]);
         return result.rows;
     },
+
+    async getClassesByTeacherId(teacherId) {
+        const query = `
+            SELECT c.*, f.name AS faculty_name
+            FROM classes c
+            LEFT JOIN faculties f ON c.faculty_id = f.id
+            WHERE c.teacher_id = $1
+        `;
+        const result = await pool.query(query, [teacherId]);
+        return result.rows;
+    },
+   
+async getStudentClassesWithDetails(studentId) {
+    const query = `
+        SELECT 
+            c.name AS class_name,
+            u.username AS teacher_name,
+            c.teacher_id,  
+            sc.joined_at,
+            ROUND(AVG(CASE WHEN a.grade IS NOT NULL THEN a.grade ELSE null END)::numeric, 2) as average_grade
+        FROM student_classes sc
+        JOIN classes c ON sc.class_id = c.id
+        JOIN users u ON c.teacher_id = u.id
+        LEFT JOIN assignments a ON a.student_id = sc.student_id AND a.folder_id IN (
+            SELECT id FROM folders WHERE class_id = c.id
+        )
+        WHERE sc.student_id = $1
+        GROUP BY c.name, u.username, c.teacher_id, sc.joined_at, c.id
+        ORDER BY sc.joined_at DESC
+    `;
+    const result = await pool.query(query, [studentId]);
+    return result.rows;
+},
+
+async getClassesByFaculty(facultyId) {
+    const query = `
+        SELECT 
+            c.*,
+            f.name AS faculty_name,
+            u.username AS teacher_name,
+            s.name AS semester_name,
+            ay.name AS academic_year_name
+        FROM classes c
+        LEFT JOIN faculties f ON c.faculty_id = f.id
+        LEFT JOIN users u ON c.teacher_id = u.id
+        LEFT JOIN semesters s ON c.semester_id = s.id
+        LEFT JOIN academic_years ay ON s.academic_year_id = ay.id
+        WHERE c.faculty_id = $1
+    `;
+    const result = await pool.query(query, [facultyId]);
+    return result.rows;
+},
 };
+
 
 export default Class;

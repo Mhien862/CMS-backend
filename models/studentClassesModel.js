@@ -52,18 +52,28 @@ const StudentClasses = {
     return result.rows[0];
   },
 
-  async getStudentClassesWithDetails(studentId) {
-    const query = `
-      SELECT sc.*, c.name AS class_name, u.username AS teacher_name, 
-             c.password AS class_password
+ 
+async getStudentClassesWithDetails(studentId) {
+  const query = `
+      SELECT 
+          c.name AS class_name,
+          u.username AS teacher_name,
+          c.teacher_id,  
+          sc.joined_at,
+          ROUND(AVG(CASE WHEN a.grade IS NOT NULL THEN a.grade ELSE null END)::numeric, 2) as average_grade
       FROM student_classes sc
       JOIN classes c ON sc.class_id = c.id
       JOIN users u ON c.teacher_id = u.id
+      LEFT JOIN assignments a ON a.student_id = sc.student_id AND a.folder_id IN (
+          SELECT id FROM folders WHERE class_id = c.id
+      )
       WHERE sc.student_id = $1
-    `;
-    const result = await pool.query(query, [studentId]);
-    return result.rows;
-  },
+      GROUP BY c.name, u.username, c.teacher_id, sc.joined_at, c.id
+      ORDER BY sc.joined_at DESC
+  `;
+  const result = await pool.query(query, [studentId]);
+  return result.rows;
+},
 
   async getClassStudentsWithDetails(classId) {
     const query = `

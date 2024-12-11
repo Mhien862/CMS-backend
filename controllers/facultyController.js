@@ -1,13 +1,11 @@
-import { pool } from '../config/db.js'; 
-
+import Faculty from '../models/facultyModels.js';
 
 export const getAllFaculties = async (req, res) => {
     try {
-        const query = `SELECT * FROM faculties ORDER BY id ASC`;
-        const result = await pool.query(query);
+        const faculties = await Faculty.findAll();
         return res.status(200).json({
             message: "Faculties retrieved successfully",
-            data: result.rows
+            data: faculties
         });
     } catch (error) {
         return res.status(500).json({
@@ -17,14 +15,12 @@ export const getAllFaculties = async (req, res) => {
     }
 };
 
-
 export const getFacultyById = async (req, res) => {
     try {
         const { id } = req.params;
-        const query = `SELECT * FROM faculties WHERE id = $1 `;
-        const result = await pool.query(query, [id]);
+        const faculty = await Faculty.findById(id);
         
-        if (result.rows.length === 0) {
+        if (!faculty) {
             return res.status(404).json({
                 message: "Faculty not found"
             });
@@ -32,7 +28,7 @@ export const getFacultyById = async (req, res) => {
 
         return res.status(200).json({
             message: "Faculty retrieved successfully",
-            data: result.rows[0]
+            data: faculty
         });
     } catch (error) {
         return res.status(500).json({
@@ -42,16 +38,14 @@ export const getFacultyById = async (req, res) => {
     }
 };
 
-
 export const createFaculty = async (req, res) => {
     try {
         const { name } = req.body;
-        const query = `INSERT INTO faculties (name) VALUES ($1) RETURNING *`;
-        const result = await pool.query(query, [name]);
+        const faculty = await Faculty.create(name);
 
         return res.status(201).json({
             message: "Faculty created successfully",
-            data: result.rows[0]
+            data: faculty
         });
     } catch (error) {
         return res.status(500).json({
@@ -61,15 +55,13 @@ export const createFaculty = async (req, res) => {
     }
 };
 
-
 export const updateFaculty = async (req, res) => {
     try {
         const { id } = req.params;
         const { name } = req.body;
-        const query = `UPDATE faculties SET name = $1 WHERE id = $2 RETURNING *`;
-        const result = await pool.query(query, [name, id]);
+        const faculty = await Faculty.update(id, name);
 
-        if (result.rows.length === 0) {
+        if (!faculty) {
             return res.status(404).json({
                 message: "Faculty not found"
             });
@@ -77,7 +69,7 @@ export const updateFaculty = async (req, res) => {
 
         return res.status(200).json({
             message: "Faculty updated successfully",
-            data: result.rows[0]
+            data: faculty
         });
     } catch (error) {
         return res.status(500).json({
@@ -87,14 +79,12 @@ export const updateFaculty = async (req, res) => {
     }
 };
 
-
 export const deleteFaculty = async (req, res) => {
     try {
         const { id } = req.params;
-        const query = `DELETE FROM faculties WHERE id = $1 RETURNING *`;
-        const result = await pool.query(query, [id]);
+        const faculty = await Faculty.delete(id);
 
-        if (result.rows.length === 0) {
+        if (!faculty) {
             return res.status(404).json({
                 message: "Faculty not found"
             });
@@ -102,7 +92,7 @@ export const deleteFaculty = async (req, res) => {
 
         return res.status(200).json({
             message: "Faculty deleted successfully",
-            data: result.rows[0]
+            data: faculty
         });
     } catch (error) {
         return res.status(500).json({

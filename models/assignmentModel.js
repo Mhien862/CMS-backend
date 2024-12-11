@@ -126,7 +126,51 @@ const Assignment = {
     `;
     const result = await pool.query(query, [studentId, classId, folderId]);
     return result.rows;
-  }
+  },
+  
+  async findByStudentAndFolderInClass(studentId, classId, folderId) {
+    const query = `
+        SELECT a.*
+        FROM assignments a
+        JOIN folders f ON a.folder_id = f.id
+        WHERE a.student_id = $1 
+        AND f.class_id = $2 
+        AND f.id = $3
+    `;
+    const result = await pool.query(query, [studentId, classId, folderId]);
+    return result.rows;
+},
+
+async getStudentGradesInClass(classId) {
+    const query = `
+        SELECT 
+            u.id,
+            u.username,
+            u.email,
+            sc.joined_at,
+            COALESCE(
+                jsonb_agg(
+                    jsonb_build_object(
+                        'assignment_id', a.id,
+                        'folder_name', f.name,
+                        'title', a.title,
+                        'grade', a.grade
+                    )
+                ) FILTER (WHERE a.id IS NOT NULL),
+                '[]'
+            ) as assignments,
+            ROUND(AVG(a.grade)::numeric, 2) as average_grade
+        FROM student_classes sc
+        JOIN users u ON sc.student_id = u.id
+        LEFT JOIN assignments a ON a.student_id = u.id
+        LEFT JOIN folders f ON a.folder_id = f.id
+        WHERE sc.class_id = $1 AND f.class_id = $1
+        GROUP BY u.id, u.username, u.email, sc.joined_at
+        ORDER BY u.username
+    `;
+    const result = await pool.query(query, [classId]);
+    return result.rows;
+}
 };
 
 

@@ -98,7 +98,31 @@ const User = {
     const query = 'SELECT * FROM users WHERE email = $1 AND is_active = true';
     const result = await pool.query(query, [email]);
     return result.rows[0];
-  }
+  },
+  
+  async getAllUsers() {
+    const query = 'SELECT * FROM users ORDER BY id ASC';
+    const result = await pool.query(query);
+    return result.rows;
+  },
+
+  async getTeachers() {
+    const query = 'SELECT * FROM users WHERE role_id = 2';
+    const result = await pool.query(query);
+    return result.rows;
+  },
+
+  async getRoles() {
+    const query = 'SELECT * FROM roles';
+    const result = await pool.query(query);
+    return result.rows;
+  },
+
+  async getFaculties() {
+    const query = 'SELECT * FROM faculties';
+    const result = await pool.query(query);
+    return result.rows;
+  },
 };
 
 export default User;

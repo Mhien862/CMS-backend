@@ -1,6 +1,19 @@
 import { pool } from "../config/db.js";
 
 const AcademicYear = {
+    async createTable() {
+        const query = `
+            CREATE TABLE IF NOT EXISTS academic_years (
+                id SERIAL PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                start_year INTEGER NOT NULL,
+                end_year INTEGER NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `;
+        await pool.query(query);
+    },
+
     async create(data) {
         const query = `
             INSERT INTO academic_years (name, start_year, end_year)

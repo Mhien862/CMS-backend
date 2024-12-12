@@ -99,7 +99,18 @@ async getStudentClassesWithDetails(studentId) {
     `;
     const result = await pool.query(query, [studentId, classId]);
     return result.rows[0].exists;
-  }
+  },
+  
+  async updatePassword(studentId, classId, newPassword) {
+    const query = `
+        UPDATE student_classes 
+        SET class_password = $1
+        WHERE student_id = $2 AND class_id = $3
+        RETURNING *
+    `;
+    const result = await pool.query(query, [newPassword, studentId, classId]);
+    return result.rows[0];
+}
 };
 
 export default StudentClasses;

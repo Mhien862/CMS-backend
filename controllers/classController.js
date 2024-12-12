@@ -173,28 +173,38 @@ export const joinClass = async (req, res) => {
     const studentId = req.user.id;
 
     try {
-        const existingEnrollment = await StudentClasses.findByStudentAndClass(studentId, classId);
         const classData = await Class.findById(classId);
-
         if (!classData) {
             return res.status(404).json({ message: "Class not found" });
         }
 
-        if (existingEnrollment && existingEnrollment.class_password === classData.password) {
+        const existingEnrollment = await StudentClasses.findByStudentAndClass(studentId, classId);
+
+        
+        if (!existingEnrollment || existingEnrollment.class_password !== classData.password) {
+            
+            if (password !== classData.password) {
+                return res.status(402).json({ message: "Incorrect password" });
+            }
+
+            
+            if (existingEnrollment) {
+                await StudentClasses.updatePassword(studentId, classId, password);
+            } else {
+                
+                await StudentClasses.create(studentId, classId, password);
+            }
+
             return res.status(200).json({ 
-                message: "Already joined the class",
-                alreadyJoined: true 
+                message: "Successfully joined the class",
+                alreadyJoined: false
             });
         }
 
-        if (password !== classData.password) {
-            return res.status(402).json({ message: "Incorrect password" });
-        }
-
-        await StudentClasses.create(studentId, classId, password);
-        res.status(200).json({ 
-            message: "Successfully joined the class",
-            alreadyJoined: false
+        
+        return res.status(200).json({ 
+            message: "Already joined the class",
+            alreadyJoined: true 
         });
     } catch (error) {
         res.status(500).json({

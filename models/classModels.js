@@ -70,17 +70,39 @@ const Class = {
 
  
     async updateClass(id, updateData) {
-        const { name, faculty_id, teacher_id, semester_id } = updateData;
-        const query = `
-            UPDATE classes
-            SET name = $1, faculty_id = $2, teacher_id = $3, semester_id = $4
-            WHERE id = $5
-            RETURNING *
-        `;
-        const values = [name, faculty_id, teacher_id, semester_id, id];
+        const { name, faculty_id, teacher_id, semester_id, password } = updateData;
+        let query;
+        let values;
+    
+        if (password) {
+            query = `
+                UPDATE classes
+                SET name = $1, 
+                    faculty_id = $2, 
+                    teacher_id = $3, 
+                    semester_id = $4,
+                    password = $5
+                WHERE id = $6
+                RETURNING *
+            `;
+            values = [name, faculty_id, teacher_id, semester_id, password, id];
+        } else {
+            query = `
+                UPDATE classes
+                SET name = $1, 
+                    faculty_id = $2, 
+                    teacher_id = $3, 
+                    semester_id = $4
+                WHERE id = $5
+                RETURNING *
+            `;
+            values = [name, faculty_id, teacher_id, semester_id, id];
+        }
+    
         const result = await pool.query(query, values);
         return result.rows[0];
     },
+    
 
  
     async deleteClass(id) {
